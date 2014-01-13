@@ -21,16 +21,18 @@
  *                                                                                                *
  *************************************************************************************************/
 
-#include <GL/glew.h>
-
 #include <QApplication>
 #include <ghoul/filesystem/filesystem>
 #include <ghoul/logging/logging>
+#include <ghoul/systemcapabilities/systemcapabilities>
 
 #include "gui.h"
 
+void initialize();
+
 using namespace ghoul::filesystem;
 using namespace ghoul::logging;
+using namespace ghoul::systemcapabilities;
 
 namespace {
     const std::string _loggerCat = "ParticleSystem";
@@ -76,8 +78,26 @@ void removeAll() {
 }
 
 int main(int argc, char** argv) {
+    initialize();
+
+    QApplication app(argc, argv);
+
+    GUI gui;
+    gui.setData(&_particleData);
+    gui.setCallbacks(addNewSource, addNewEffect, update, removeAll);
+    gui.show();
+
+    SysCap.detectCapabilities();
+    SysCap.logCapabilities(SystemCapabilitiesComponent::Verbosity::Full);
+
+    // Create and enable your simulator code here. 'app.exec()' will start the rendering loop
+
+    return app.exec();
+}
+
+void initialize() {
     // Initialize LogManager to print error messages to the console
-    LogManager::initialize(LogManager::LogLevelInfo);
+    LogManager::initialize(LogManager::LogLevel::Info);
     LogMgr.addLog(new ConsoleLog);
 
     // Initialize the FileSystem to dynamically determine paths
@@ -88,14 +108,6 @@ int main(int argc, char** argv) {
     FileSys.registerPathToken("${ASSETS}", "assets/");
 #endif
 
-    QApplication app(argc, argv);
-
-    GUI gui;
-    gui.setData(&_particleData);
-    gui.setCallbacks(addNewSource, addNewEffect, update, removeAll);
-    gui.show();
-
-    // Create and enable your simulator code here. 'app.exec()' will start the rendering loop
-
-    return app.exec();
+    SystemCapabilities::initialize();
+    SysCap.addComponent(new CPUCapabilitiesComponent);
 }

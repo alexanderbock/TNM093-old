@@ -31,6 +31,10 @@ if (UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif ()
 
+if (APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif ()
+
 set(GHOUL_ROOT_DIR "${PROJECT_SOURCE_DIR}/ghoul")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${GHOUL_ROOT_DIR}/ext)
 
@@ -53,32 +57,22 @@ set(ParticleSimulator_GUI_HEADERS gui.h renderer.h)
 ################
 # Dependencies #
 ################
-# Include the General Helpful Open Utility Library
+# Ghoul
+add_definitions(-DGHL_DEBUG)
 set(GHOUL_ROOT_DIR "${PROJECT_SOURCE_DIR}/ghoul")
-add_subdirectory(ghoul)
 include_directories("${GHOUL_ROOT_DIR}/include")
+add_subdirectory(${GHOUL_ROOT_DIR})
+set(DEPENDENT_LIBS ${DEPENDENT_LIBS} Ghoul)
 
 # Include then openGL Mathematics library
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
-# If we are on windows, we might need to hardcode the path to the provided GLEW libraries
-if (WIN32)
-  find_package(GLEW)
-  if (NOT GLEW_FOUND)
-    message(STATUS "Including hard-coded GLEW library")
-    set(GLEW_INCLUDE_DIRS ${GHOUL_ROOT_DIR}/ext/glew/include)
-    set(GLEW_LIBRARIES ${GHOUL_ROOT_DIR}/ext/glew/lib/glew32.lib)
-  endif (NOT GLEW_FOUND)
-else ()
-  # On other systems, it should be enough to just 'find' them
-  find_package(GLEW REQUIRED)
-endif ()
+include_directories("${GHOUL_ROOT_DIR}/ext/glew/include")
+add_definitions(-DGLEW_STATIC)
+find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
-
-# Include the OpenGL library
-find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIRS})
+set(DEPENDENT_LIBS ${DEPENDENT_LIBS} ${GLEW_LIBRARY})
 
 # Include Qt 
 set(QT_USE_QTOPENGL TRUE)
@@ -87,7 +81,7 @@ include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 # Wrap the headers to autogenerate the qt metaobject files
 qt4_wrap_cpp(ParticleSimulator_GUI_HEADERS_MOC ${ParticleSimulator_GUI_HEADERS})
-
+set(DEPENDENT_LIBS ${DEPENDENT_LIBS} ${QT_LIBRARIES} ${OPENGL_LIBRARIES})
 
 ##############
 # Executable #
@@ -100,30 +94,30 @@ add_executable(ParticleSimulator
     ${ParticleSimulator_Simulator_SOURCES}
     ${ParticleSimulator_Simulator_HEADERS}
 )
-target_link_libraries(ParticleSimulator Ghoul ${QT_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(ParticleSimulator ${DEPENDENT_LIBS})
 
 # On Windows, we want to automatically copy all the necessary dll files into the build directory
-if (WIN32)
-    add_custom_command(
-        TARGET ParticleSimulator 
-        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32mx.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-    )
-    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+#if (WIN32)
+#    add_custom_command(
+#        TARGET ParticleSimulator 
+#        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32mx.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#    )
+#    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32 bit
-        add_custom_command(
-            TARGET ParticleSimulator 
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-        )
-    else ()
+#        add_custom_command(
+#            TARGET ParticleSimulator 
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#        )
+#    else ()
         # 64 bit
-        add_custom_command(
-            TARGET ParticleSimulator 
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-        )
-    endif ()
-endif ()
+#        add_custom_command(
+#            TARGET ParticleSimulator 
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+#        )
+#    endif ()
+#endif ()

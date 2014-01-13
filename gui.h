@@ -64,6 +64,8 @@ public:
         std::function<void()> removeAllCallback
         );
 
+    void show();
+
 private slots:
     // This slot will be called when any of the buttons in the interface is pressed
     void handleButtonPress();

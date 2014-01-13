@@ -113,11 +113,6 @@ GUI::GUI(QWidget* parent, Qt::WindowFlags f)
     _layout->addWidget(removeAll, 2, 1, 1, 1);
 
     createRenderingBox();
-
-    // Create the timer that will drive the rendering and update rate of 60Hz
-    _timer = new QTimer(this);
-    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
-    _timer->start(16); // 16ms = 60Hz refresh rate
 }
 
 void GUI::createRenderer() {
@@ -457,4 +452,12 @@ void GUI::setCallbacks(
     _effectAddedCallback = effectAddedCallback;
     _updateCallback = updateCallback;
     _removeAllCallback = removeAllCallback;
+}
+
+void GUI::show() {
+    QWidget::show();
+    // Create the timer that will drive the rendering and update rate of 60Hz
+    _timer = new QTimer(this);
+    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
+    _timer->start(16); // 16ms = 60Hz refresh rate
 }

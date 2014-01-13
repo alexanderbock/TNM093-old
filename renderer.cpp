@@ -25,6 +25,7 @@
 
 #include <ghoul/filesystem/filesystem>
 #include <ghoul/logging/logging>
+#include <ghoul/systemcapabilities/systemcapabilities>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
@@ -119,6 +120,9 @@ void Renderer::initializeGL() {
         LFATAL("GLEW initialization failed");
         return;
     }
+
+    ghoul::systemcapabilities::SystemCapabilitiesComponent* c = new ghoul::systemcapabilities::OpenGLCapabilitiesComponent;
+    SysCap.addComponent(c);
 
     // Set the OpenGL state as we want it
     glClearColor(0.f, 0.f, 0.f, 0.f);
