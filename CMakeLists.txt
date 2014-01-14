@@ -69,7 +69,7 @@ find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
 include_directories("${GHOUL_ROOT_DIR}/ext/glew/include")
-add_definitions(-DGLEW_STATIC)
+#add_definitions(-DGLEW_STATIC)
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 set(DEPENDENT_LIBS ${DEPENDENT_LIBS} ${GLEW_LIBRARY})
@@ -95,29 +95,30 @@ add_executable(ParticleSimulator
     ${ParticleSimulator_Simulator_HEADERS}
 )
 target_link_libraries(ParticleSimulator ${DEPENDENT_LIBS})
+#message("${DEPENDENT_LIBS}")
 
 # On Windows, we want to automatically copy all the necessary dll files into the build directory
-#if (WIN32)
-#    add_custom_command(
-#        TARGET ParticleSimulator 
-#        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32mx.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#    )
-#    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+if (WIN32)
+    add_custom_command(
+        TARGET ParticleSimulator 
+        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+        POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/glew/lib/glew32mx.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+    )
+    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
         # 32 bit
-#        add_custom_command(
-#            TARGET ParticleSimulator 
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#        )
-#    else ()
+        add_custom_command(
+            TARGET ParticleSimulator 
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win32/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+        )
+    else ()
         # 64 bit
-#        add_custom_command(
-#            TARGET ParticleSimulator 
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
-#        )
-#    endif ()
-#endif ()
+        add_custom_command(
+            TARGET ParticleSimulator 
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/DevIL.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILU.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+            POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GHOUL_ROOT_DIR}/ext/il/lib/win64/ILUT.dll" "$<TARGET_FILE_DIR:ParticleSimulator>"
+        )
+    endif ()
+endif ()

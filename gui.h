@@ -64,7 +64,9 @@ public:
         std::function<void()> removeAllCallback
         );
 
-    void show();
+    void startRendering();
+    //void show();
+
 
 private slots:
     // This slot will be called when any of the buttons in the interface is pressed
@@ -106,6 +108,9 @@ private:
 
     // The renderer
     Renderer* _renderer;
+
+    // If <code>false</code>, the update method is a no-op
+    bool _renderingStarted;
 
     // Widgets for the sources
     QLineEdit* _sourcePositionXText;

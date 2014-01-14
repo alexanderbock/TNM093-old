@@ -51,6 +51,8 @@ public:
     // Returns the number of particles currently in the rendering system
     unsigned int numberOfParticles() const;
 
+    void startRendering();
+
 public slots:
     // Determines if the ground plane should be rendered or not
     void showGroundRendering(bool showRendering);
@@ -119,6 +121,9 @@ private:
 
     // Is the position of the camera limited by the distance of the ground plane?
     bool _limitCameraPosition;
+
+    // Has the rendering started already?
+    bool _renderingStarted;
 
     // The current camera position
     glm::vec3 _position;

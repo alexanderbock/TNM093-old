@@ -70,6 +70,7 @@ namespace {
 Renderer::Renderer(const QGLFormat& format, QWidget* parent, Qt::WindowFlags f)
     : QGLWidget(format, parent, nullptr, f)
     , _limitCameraPosition(true)
+    , _renderingStarted(false)
     , _particleData(nullptr)
     , _renderGround(true)
     , _groundVBO(0)
@@ -343,9 +344,10 @@ bool Renderer::particlesAreReady() const {
 }
 
 void Renderer::paintGL() {
+    if (_renderingStarted) {
 #ifdef PERFORMANCE_MEASUREMENTS
-    glFinish();
-    high_resolution_clock::time_point t0 = high_resolution_clock::now();
+        glFinish();
+        high_resolution_clock::time_point t0 = high_resolution_clock::now();
 #endif
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -357,11 +359,12 @@ void Renderer::paintGL() {
     if (particlesAreReady())
         drawParticles();
 #ifdef PERFORMANCE_MEASUREMENTS
-    //glFlush();
-    glFinish();
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    LINFO(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
+        //glFlush();
+        glFinish();
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
+        LINFO(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
 #endif
+    }
 }
 
 void Renderer::drawGround() {
@@ -737,4 +740,8 @@ void Renderer::limitCameraPosition(bool limitDistance) {
 
 unsigned int Renderer::numberOfParticles() const {
     return _numberOfParticles;
+}
+
+void Renderer::startRendering() {
+    _renderingStarted = true;
 }

@@ -92,6 +92,8 @@ int main(int argc, char** argv) {
 
     // Create and enable your simulator code here. 'app.exec()' will start the rendering loop
 
+
+    gui.startRendering();
     return app.exec();
 }
 

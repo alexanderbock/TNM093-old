@@ -56,6 +56,7 @@ GUI::GUI(QWidget* parent, Qt::WindowFlags f)
     : QWidget(parent, f)
     , _layout(nullptr)
     , _renderer(nullptr)
+    , _renderingStarted(false)
     , _sourcePositionXText(nullptr)
     , _sourcePositionYText(nullptr)
     , _sourcePositionZText(nullptr)
@@ -113,6 +114,10 @@ GUI::GUI(QWidget* parent, Qt::WindowFlags f)
     _layout->addWidget(removeAll, 2, 1, 1, 1);
 
     createRenderingBox();
+
+    _timer = new QTimer(this);
+    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
+    _timer->start(16); // 16ms = 60Hz refresh rate
 }
 
 void GUI::createRenderer() {
@@ -338,15 +343,17 @@ void GUI::handleButtonPress() {
         LFATAL("Missing handler for button press");
 }
 void GUI::handleUpdate() {
-    const int interval = _timer->interval(); // in ms
-    _updateCallback(interval / 1000.f); // in s
+    if (_renderingStarted) {
+        const int interval = _timer->interval(); // in ms
+        _updateCallback(interval / 1000.f); // in s
 
-    // Update the data of the renderer after the update callback has returned
-    _renderer->updateData();
-    // Update the label showing the amount of particles
-    _numParticlesLabel->setText(QString("Number of Particles:\n%1").arg(_renderer->numberOfParticles()));
-    // Trigger a new rendering
-    _renderer->updateGL();
+        // Update the data of the renderer after the update callback has returned
+        _renderer->updateData();
+        // Update the label showing the amount of particles
+        _numParticlesLabel->setText(QString("Number of Particles:\n%1").arg(_renderer->numberOfParticles()));
+        // Trigger a new rendering
+        _renderer->updateGL();
+    }
 }
 
 void GUI::handleSourceSlider() {
@@ -454,10 +461,15 @@ void GUI::setCallbacks(
     _removeAllCallback = removeAllCallback;
 }
 
-void GUI::show() {
-    QWidget::show();
-    // Create the timer that will drive the rendering and update rate of 60Hz
-    _timer = new QTimer(this);
-    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
-    _timer->start(16); // 16ms = 60Hz refresh rate
+void GUI::startRendering() {
+    _renderingStarted = true;
+    _renderer->startRendering();
 }
+
+//void GUI::show() {
+//    QWidget::show();
+//    // Create the timer that will drive the rendering and update rate of 60Hz
+//    _timer = new QTimer(this);
+//    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
+//    _timer->start(16); // 16ms = 60Hz refresh rate
+//}
