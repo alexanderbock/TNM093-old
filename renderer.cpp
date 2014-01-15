@@ -1,25 +1,27 @@
-/**************************************************************************************************
- *                                                                                                *
- * TNM090 Particle System                                                                         *
- *                                                                                                *
- * Copyright (c) 2013 Alexander Bock                                                              *
- *                                                                                                *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software  *
- * and associated documentation files (the "Software"), to deal in the Software without           *
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,     *
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the  *
- * Software is furnished to do so, subject to the following conditions:                           *
- *                                                                                                *
- * The above copyright notice and this permission notice shall be included in all copies or       *
- * substantial portions of the Software.                                                          *
- *                                                                                                *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING  *
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND     *
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,   *
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, *
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.        *
- *                                                                                                *
- *************************************************************************************************/
+/*****************************************************************************************
+ *                                                                                       *
+ * TNM094 Particle System                                                                *
+ *                                                                                       *
+ * Copyright (c) 2014 Alexander Bock                                                     *
+ *                                                                                       *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
+ * software and associated documentation files (the "Software"), to deal in the Software *
+ * without restriction, including without limitation the rights to use, copy, modify,    *
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to    *
+ * permit persons to whom the Software is furnished to do so, subject to the following   *
+ * conditions:                                                                           *
+ *                                                                                       *
+ * The above copyright notice and this permission notice shall be included in all copies *
+ * or substantial portions of the Software.                                              *
+ *                                                                                       *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,   *
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A         *
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT    *
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF  *
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE  *
+ * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
+ *                                                                                       *
+ ****************************************************************************************/
 
 #include "renderer.h"
 
@@ -36,6 +38,7 @@
 using std::chrono::high_resolution_clock;
 
 using namespace ghoul::opengl;
+using namespace ghoul::systemcapabilities;
 
 namespace {
     // Category used for the logging mechanism to print out debug/error messages
@@ -73,22 +76,22 @@ Renderer::Renderer(const QGLFormat& format, QWidget* parent, Qt::WindowFlags f)
     , _renderingStarted(false)
     , _particleData(nullptr)
     , _renderGround(true)
-    , _groundVBO(0)
+    , _groundVBO(0u)
     , _groundTexture(nullptr)
     , _groundTextureNormal(nullptr)
     , _groundProgram(nullptr)
     , _groundProgramReady(false)
     , _renderSkybox(true)
-    , _skyboxVBO(0)
-    , _skyboxIBO(0)
-    , _skyboxTexture(0)
+    , _skyboxVBO(0u)
+    , _skyboxIBO(0u)
+    , _skyboxTexture(0u)
     , _skyboxProgram(nullptr)
     , _skyboxProgramReady(false)
-    , _particleVBO(0)
+    , _particleVBO(0u)
     , _particleTexture(nullptr)
     , _particleProgram(nullptr)
     , _particleProgramReady(false)
-    , _numberOfParticles(0)
+    , _numberOfParticles(0u)
 {}
 
 Renderer::~Renderer() {
@@ -97,19 +100,29 @@ Renderer::~Renderer() {
 
     glDeleteBuffers(1, &_groundVBO);
     delete _groundTexture;
+    _groundTexture = nullptr;
     delete _groundTextureNormal;
+    _groundTextureNormal = nullptr;
     delete _groundProgram;
+    _groundProgram = nullptr;
     _groundProgramReady = false;
 
     glDeleteBuffers(1, &_skyboxVBO);
+    _skyboxVBO = 0u;
     glDeleteBuffers(1, &_skyboxIBO);
+    _skyboxIBO = 0u;
     glDeleteTextures(1, &_skyboxTexture);
+    _skyboxTexture = 0u;
     delete _skyboxProgram;
+    _skyboxProgram = nullptr;
     _skyboxProgramReady = false;
 
     glDeleteBuffers(1, &_particleVBO);
+    _particleVBO = 0u;
     delete _particleTexture;
+    _particleTexture = nullptr;
     delete _particleProgram;
+    _particleProgram = nullptr;
     _particleProgramReady = false;
 }
 
@@ -122,7 +135,7 @@ void Renderer::initializeGL() {
         return;
     }
 
-    ghoul::systemcapabilities::SystemCapabilitiesComponent* c = new ghoul::systemcapabilities::OpenGLCapabilitiesComponent;
+    SystemCapabilitiesComponent* c = new OpenGLCapabilitiesComponent;
     SysCap.addComponent(c);
 
     // Set the OpenGL state as we want it
@@ -131,7 +144,7 @@ void Renderer::initializeGL() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Initialize the textures, Vertex Buffer Objects, Index Buffer Objects and ProgramObjects
+    // Initialize the textures, buffers, and ProgramObjects
     initializeGround();
     initializeSkybox();
     initializeParticle();
@@ -151,27 +164,34 @@ void Renderer::initializeGround() {
     generateGroundBuffer();
 
     // loadTexture will return a nullptr if the texture could not be loaded
-    _groundTexture = loadTexture(FileSys.absolutePath("${ASSETS}/dirt.jpg"));
+    _groundTexture = loadTexture(absPath("${ASSETS}/dirt.jpg"));
     if (_groundTexture != nullptr) {
         _groundTexture->enable();
         _groundTexture->bind();
         _groundTexture->uploadTexture();
+        _groundTexture->setFilter(Texture::FilterMode::AnisotropicMipMap);
     }
 
     // loadTexture will return a nullptr if the texture could not be loaded
-    _groundTextureNormal = loadTexture(FileSys.absolutePath("${ASSETS}/dirt_n.jpg"));
+    _groundTextureNormal = loadTexture(absPath("${ASSETS}/dirt_n.jpg"));
     if (_groundTextureNormal != nullptr) {
         _groundTextureNormal->enable();
         _groundTextureNormal->bind();
         _groundTextureNormal->uploadTexture();
+        _groundTextureNormal->setFilter(Texture::FilterMode::AnisotropicMipMap);
     }
 
     // Generate the ProgramObject that holds the ShaderObjects used to render the ground
-    // _groundProgramReady is true if both the compiling and linking succeeded; errors that occur
-    // during either step will be written to the Logmanager by the ProgramObject and ShaderObject
+    // _groundProgramReady is true if both the compiling and linking succeeded; errors
+    // that occur during either step will be written to the LogManager by the
+    // ProgramObject and ShaderObject
     _groundProgram = new ProgramObject("Ground");
-    _groundProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeVertex, FileSys.absolutePath("${ASSETS}/ground.vert")));
-    _groundProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeFragment, FileSys.absolutePath("${ASSETS}/ground.frag")));
+    _groundProgram->attachObject(new ShaderObject(
+                                        ShaderObject::ShaderTypeVertex,
+                                        absPath("${ASSETS}/ground.vert")));
+    _groundProgram->attachObject(new ShaderObject(
+                                        ShaderObject::ShaderTypeFragment,
+                                        absPath("${ASSETS}/ground.frag")));
     bool groundCompileSuccess = _groundProgram->compileShaderObjects();
     if (groundCompileSuccess) {
         bool linkSuccess = _groundProgram->linkProgramObject();
@@ -184,11 +204,16 @@ void Renderer::initializeSkybox() {
     generateSkyboxBuffer();
 
     // Create the ProgramObject that holds the ShaderObjects used to render the skybox
-    // _skyboxProgramReady is true if both the compiling and linking succeeded; errors that occur
-    // during either step will be written to the Logmanager by the ProgramObject and ShaderObject
+    // _skyboxProgramReady is true if both the compiling and linking succeeded; errors
+    // that occur during either step will be written to the LogManager by the
+    // ProgramObject and ShaderObject
     _skyboxProgram = new ProgramObject("Skybox");
-    _skyboxProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeVertex, FileSys.absolutePath("${ASSETS}/skybox.vert")));
-    _skyboxProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeFragment, FileSys.absolutePath("${ASSETS}/skybox.frag")));
+    _skyboxProgram->attachObject(new ShaderObject(
+                                        ShaderObject::ShaderTypeVertex,
+                                        absPath("${ASSETS}/skybox.vert")));
+    _skyboxProgram->attachObject(new ShaderObject(
+                                        ShaderObject::ShaderTypeFragment,
+                                        absPath("${ASSETS}/skybox.frag")));
     bool skyboxCompileSuccess = _skyboxProgram->compileShaderObjects();
     if (skyboxCompileSuccess) {
         bool linkSuccess = _skyboxProgram->linkProgramObject();
@@ -208,17 +233,17 @@ void Renderer::initializeSkybox() {
     // Take a little detour through Ghoul to use DevIL library to load textures
     // Load the textures and assign the data pointer of each texture to be used as the
     // corresponding face texture
-    Texture* xPos = loadTexture(FileSys.absolutePath("${ASSETS}/xpos.png"));
-    Texture* xNeg = loadTexture(FileSys.absolutePath("${ASSETS}/xneg.png"));
-    Texture* yPos = loadTexture(FileSys.absolutePath("${ASSETS}/ypos.png"));
-    Texture* yNeg = loadTexture(FileSys.absolutePath("${ASSETS}/yneg.png"));
-    Texture* zPos = loadTexture(FileSys.absolutePath("${ASSETS}/zpos.png"));
-    Texture* zNeg = loadTexture(FileSys.absolutePath("${ASSETS}/zneg.png"));
+    Texture* xPos = loadTexture(absPath("${ASSETS}/xpos.png"));
+    Texture* xNeg = loadTexture(absPath("${ASSETS}/xneg.png"));
+    Texture* yPos = loadTexture(absPath("${ASSETS}/ypos.png"));
+    Texture* yNeg = loadTexture(absPath("${ASSETS}/yneg.png"));
+    Texture* zPos = loadTexture(absPath("${ASSETS}/zpos.png"));
+    Texture* zNeg = loadTexture(absPath("${ASSETS}/zneg.png"));
     if ((xPos == nullptr) || (xNeg == nullptr) || (yPos == nullptr) || (yNeg == nullptr) ||
         (zPos == nullptr) || (zNeg == nullptr))
     {
-        // If any of the texture is not loadable, delete all (it's safe to delete a nullptr)
-        // and abort. 'loadTexture' will write an error message if it fails
+        // If any of the texture is not loadable, delete all and abort
+        // 'loadTexture' will log an error message, if it fails
         delete xPos;
         delete xNeg;
         delete yPos;
@@ -291,7 +316,7 @@ void Renderer::initializeSkybox() {
         GL_UNSIGNED_BYTE,
         zNeg->pixelData());
 
-    // Now OpenGL has taken a copy of the data in the textures and we can delete our versions
+    // Now OpenGL has taken a copy of the data in the textures, we can delete our versions
     delete xPos;
     delete xNeg;
     delete yPos;
@@ -302,19 +327,24 @@ void Renderer::initializeSkybox() {
 
 void Renderer::initializeParticle() {
     // loadTexture will return a nullptr if the texture could not be loaded
-    _particleTexture = loadTexture(FileSys.absolutePath("${ASSETS}/particle.png"));
+    _particleTexture = loadTexture(absPath("${ASSETS}/particle.png"));
     if (_particleTexture != nullptr) {
         _particleTexture->enable();
         _particleTexture->bind();
         _particleTexture->uploadTexture();
     }
 
-    // Create the ProgramObject that holds the ShaderObjects used to render the skybox
-    // _particleProgramReady is true if both the compiling and linking succeeded; errors that occur
-    // during either step will be written to the Logmanager by the ProgramObject and ShaderObject
+    // Create the ProgramObject that holds the ShaderObjects used to render the particles
+    // _particleProgramReady is true if both the compiling and linking succeeded; errors
+    // that occur during either step will be written to the LogManager by the
+    // ProgramObject and ShaderObject
     _particleProgram = new ProgramObject("Particle");
-    _particleProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeVertex, FileSys.absolutePath("${ASSETS}/particle.vert")));
-    _particleProgram->attachObject(new ShaderObject(ShaderObject::ShaderTypeFragment, FileSys.absolutePath("${ASSETS}/particle.frag")));
+    _particleProgram->attachObject(new ShaderObject(
+                                            ShaderObject::ShaderTypeVertex,
+                                            absPath("${ASSETS}/particle.vert")));
+    _particleProgram->attachObject(new ShaderObject(
+                                            ShaderObject::ShaderTypeFragment,
+                                            absPath("${ASSETS}/particle.frag")));
     bool particleCompileSuccess = _particleProgram->compileShaderObjects();
     if (particleCompileSuccess) {
         bool linkSuccess = _particleProgram->linkProgramObject();
@@ -329,18 +359,32 @@ void Renderer::resizeGL(int width, int height) {
 }
 
 bool Renderer::groundIsReady() const {
-    return ((_groundVBO != 0) && (_groundProgram != nullptr) &&
-        _groundProgramReady && (_groundTexture != nullptr) && (_groundTextureNormal != nullptr));
+    const bool groundVBOReady = _groundVBO != 0u;
+    const bool groundProgramExists = _groundProgram != nullptr;
+    const bool groundProgramReady = _groundProgramReady;
+    const bool groundTextureReady = _groundTexture != nullptr;
+    const bool groundTextureNormalReady = _groundTextureNormal != nullptr;
+    return groundVBOReady && groundProgramExists && groundProgramReady &&
+        groundTextureReady && groundTextureNormalReady;
 }
 
 bool Renderer::skyboxIsReady() const {
-    return ((_skyboxVBO != 0) && (_skyboxIBO != 0) &&
-        (_skyboxProgram != nullptr) && _skyboxProgramReady && (_skyboxTexture != 0));
+    const bool skyboxVBOReady = _skyboxVBO != 0u;
+    const bool skyboxIBOReady = _skyboxIBO != 0u;
+    const bool skyboxProgramExists = _skyboxProgram != nullptr;
+    const bool skyboxProgramReady = _skyboxProgramReady;
+    const bool skyboxTextureReady = _skyboxTexture != 0u;
+    return skyboxVBOReady && skyboxIBOReady && skyboxProgramExists &&
+        skyboxProgramReady && skyboxTextureReady;
 }
 
 bool Renderer::particlesAreReady() const {
-    return ((_particleVBO != 0) && (_particleProgram != nullptr) &&
-        _particleProgramReady);
+    const bool particleVBOReady = _particleVBO != 0u;
+    const bool particleProgramExists = _particleProgram != nullptr;
+    const bool particleProgramReady = _particleProgramReady;
+    const bool particleTextureReady = _particleTexture != nullptr;
+    return particleVBOReady && particleProgramExists && particleProgramReady &&
+        particleTextureReady;
 }
 
 void Renderer::paintGL() {
@@ -349,17 +393,16 @@ void Renderer::paintGL() {
         glFinish();
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
 #endif
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (_renderGround && groundIsReady())
-        drawGround();
-    if (_renderSkybox && skyboxIsReady())
-        drawSkybox();
+        if (_renderGround && groundIsReady())
+            drawGround();
+        if (_renderSkybox && skyboxIsReady())
+            drawSkybox();
 
-    if (particlesAreReady())
-        drawParticles();
+        if (particlesAreReady())
+            drawParticles();
 #ifdef PERFORMANCE_MEASUREMENTS
-        //glFlush();
         glFinish();
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
         LINFO(std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
@@ -386,21 +429,21 @@ void Renderer::drawGround() {
     // We are using 'fragColor' as the output variable from the FragmentShader
     _groundProgram->bindFragDataLocation("fragColor", 0);
 
-    // Enable and bind the VBO holding the vertices for the ground and assign them a location
+    // Enable and bind the VBO holding the vertices for the ground and assign a location
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, _groundVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     _groundProgram->bindAttributeLocation("in_position", _groundVBO);
     
     // Set the rest of the uniforms
-    // It would be faster to cache the uniform location and reuse that, but this is more readable
+    // It would be faster to cache the uniform location, but this is more readable
     _groundProgram->setUniform("_viewProjectionMatrix", _viewProjectionMatrix);
     _groundProgram->setUniform("_cameraPosition", _position);
     _groundProgram->setUniform("_lightPosition", _lightPosition);
     _groundProgram->setUniform("_texture", groundTextureUnit.unitNumber());
     _groundProgram->setUniform("_textureNormal", groundTextureNormalUnit.unitNumber());
 
-    // Draw one quad 
+    // Draw one quad for the ground
     glDrawArrays(GL_QUADS, 0, 4);
 
     // And disable everything again to be a good citizen
@@ -423,7 +466,7 @@ void Renderer::drawSkybox() {
     // We are using 'fragColor' as the output variable from the FragmentShader
     _skyboxProgram->bindFragDataLocation("fragColor", 0);
 
-    // Enable and bind the VBO holding the vertices for the ground and assign them a location
+    // Enable and bind the VBO holding the vertices for the ground and assign a location
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, _skyboxVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -433,7 +476,7 @@ void Renderer::drawSkybox() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _skyboxIBO);
 
     // Set the rest of the uniforms
-    // It would be faster to cache the uniform location and reuse that, but this is more readable
+    // It would be faster to cache the uniform location, but this is more readable
     _skyboxProgram->setUniform("_viewProjectionMatrix", _viewProjectionMatrix);
     _skyboxProgram->setUniform("_texture", cubeMapTextureUnit.unitNumber());
 
@@ -465,14 +508,14 @@ void Renderer::drawParticles() {
     // We are using 'fragColor' as the output variable from the FragmentShader
     _particleProgram->bindFragDataLocation("fragColor", 0);
 
-    // Enable and bind the VBO holding the vertices for the ground and assign them a location
+    // Enable and bind the VBO holding the vertices for the ground and assign a location
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, _particleVBO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
     _particleProgram->bindAttributeLocation("in_position", _particleVBO);
 
     // Set the rest of the uniforms
-    // It would be faster to cache the uniform location and reuse that, but this is more readable
+    // It would be faster to cache the uniform location, but this is more readable
     _particleProgram->setUniform("_viewProjectionMatrix", _viewProjectionMatrix);
     _particleProgram->setUniform("_cameraPosition", _position);
     _particleProgram->setUniform("_lightPosition", _lightPosition);
@@ -546,7 +589,7 @@ void Renderer::rotate(const glm::vec2& newMouse) {
     if (newMouse == _oldMousePosition)
         return;
 
-    // Get the displacement between the old and the new position, scaled by the rotational factor
+    // Get the scaled displacement between the old and the new position
     glm::vec2 t = (_oldMousePosition - newMouse) * _rotationalFactor;
     
     // limit the maximum change per frame to |t| = 1 -> |phi| = pi
@@ -559,17 +602,21 @@ void Renderer::rotate(const glm::vec2& newMouse) {
     // The up vector is const (0,0,1)
     glm::quat rotationQuat = glm::angleAxis(phi.x, _upVector);
 
-    // We don't want _position to coincide with _upVector, since the _upVector x _position would
-    // be numerically unstable in that case
-    const float currentTilt = glm::acos(glm::dot(glm::normalize(_upVector), glm::normalize(_position)));
+    // We don't want _position to coincide with _upVector, since the _upVector x _position
+    // would be numerically unstable in that case
+    const float currentTilt = glm::acos(
+                                    glm::dot(glm::normalize(_upVector),
+                                    glm::normalize(_position)));
     const bool closeToTop = ((currentTilt < _minimumTilt) && (phi.y < 0.f));
     const bool closeToBottom = ((currentTilt >  _maximumTilt) && (phi.y > 0.f));
     if (closeToBottom || closeToTop)
         return;
 
-    // Using the cross product between the up vector and the current position always results in a
-    // vector perpendicular to the view direction to enable the tilting.
-    glm::quat tiltQuat = glm::angleAxis(phi.y, glm::normalize(glm::cross(_upVector, _position)));
+    // Using the cross product between the up vector and the current position always
+    // results in a vector perpendicular to the view direction to enable the tilting.
+    glm::quat tiltQuat = glm::angleAxis(
+                                phi.y, 
+                                glm::normalize(glm::cross(_upVector, _position)));
     
     // The order of the quaternions are not important
     _position = tiltQuat * rotationQuat * _position;
@@ -588,9 +635,9 @@ void Renderer::zoom(const glm::vec2& newMouse) {
     if (newMouse == _oldMousePosition)
         return;
 
-    // Get the displacement between the old and the new position. As opposed to the rotation,
-    // no scaling factor is needed here as we only consider a pi/2 tilting on 600 pixels instead
-    // of a 2pi rotation on 800 pixels
+    // Get the displacement between the old and the new position. As opposed to the
+    // rotation, no scaling factor is needed here as we only consider a pi/2 tilting on
+    // 600 pixels instead of a 2pi rotation on 800 pixels
     const float t = (newMouse.y - _oldMousePosition.y);
 
     // The vector pointing from the focus to the current position
@@ -600,13 +647,13 @@ void Renderer::zoom(const glm::vec2& newMouse) {
     _position = (1 + t) * positionVector;
 
     if (_limitCameraPosition) {
-        // If the potential new position would be outside the maximum distance, we want to move only
-        // up to the maximal allowed distance
+        // If the potential new position would be outside the maximum distance, we want to
+        // move only up to the maximal allowed distance
         if ((glm::length(_position) > _maximumDistance))
             _position = _maximumDistance * glm::normalize(positionVector);
 
-        // If the potential new position would be outside the minimum distance, we want to move only
-        // up to the minimal allowed distance
+        // If the potential new position would be outside the minimum distance, we want to
+        // move only up to the minimal allowed distance
         if ((glm::length(_position) < _minimumDistance))
             _position = _minimumDistance * glm::normalize(positionVector);
 
@@ -618,7 +665,7 @@ void Renderer::zoom(const glm::vec2& newMouse) {
 }
 
 void Renderer::setData(const std::vector<glm::vec3>* particleData) {
-    // Update the data for the particles. We don't own any of the data, so no delete is necessary
+    // Update the data for the particles. We don't own any of the data, so no delete here
     _particleData = particleData;
 }
 
@@ -637,7 +684,11 @@ void Renderer::updateData() {
     // GL_STREAM_DRAW signals to OpenGL that the data will change a lot
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, _particleVBO);
-    glBufferData(GL_ARRAY_BUFFER, _particleData->size() * 3 * sizeof(float), &(_particleData->at(0)), GL_STREAM_DRAW);
+    glBufferData(
+            GL_ARRAY_BUFFER,
+            _particleData->size() * 3 * sizeof(float),
+            &(_particleData->at(0)),
+            GL_STREAM_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     _numberOfParticles = static_cast<GLsizei>(_particleData->size());
 }

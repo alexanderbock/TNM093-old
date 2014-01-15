@@ -59,6 +59,7 @@ set(ParticleSimulator_GUI_HEADERS gui.h renderer.h)
 ################
 # Ghoul
 add_definitions(-DGHL_DEBUG)
+set(GHOUL_USE_DYNAMIC_GLEW ON)
 set(GHOUL_ROOT_DIR "${PROJECT_SOURCE_DIR}/ghoul")
 include_directories("${GHOUL_ROOT_DIR}/include")
 add_subdirectory(${GHOUL_ROOT_DIR})

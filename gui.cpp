@@ -1,25 +1,27 @@
-/**************************************************************************************************
- *                                                                                                *
- * TNM090 Particle System                                                                         *
- *                                                                                                *
- * Copyright (c) 2013 Alexander Bock                                                              *
- *                                                                                                *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software  *
- * and associated documentation files (the "Software"), to deal in the Software without           *
- * restriction, including without limitation the rights to use, copy, modify, merge, publish,     *
- * distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the  *
- * Software is furnished to do so, subject to the following conditions:                           *
- *                                                                                                *
- * The above copyright notice and this permission notice shall be included in all copies or       *
- * substantial portions of the Software.                                                          *
- *                                                                                                *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING  *
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND     *
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,   *
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, *
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.        *
- *                                                                                                *
- *************************************************************************************************/
+/*****************************************************************************************
+ *                                                                                       *
+ * TNM094 Particle System                                                                *
+ *                                                                                       *
+ * Copyright (c) 2014 Alexander Bock                                                     *
+ *                                                                                       *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this  *
+ * software and associated documentation files (the "Software"), to deal in the Software *
+ * without restriction, including without limitation the rights to use, copy, modify,    *
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to    *
+ * permit persons to whom the Software is furnished to do so, subject to the following   *
+ * conditions:                                                                           *
+ *                                                                                       *
+ * The above copyright notice and this permission notice shall be included in all copies *
+ * or substantial portions of the Software.                                              *
+ *                                                                                       *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,   *
+ * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A         *
+ * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT    *
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF  *
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE  *
+ * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                         *
+ *                                                                                       *
+ ****************************************************************************************/
 
 #include "gui.h"
 #include "renderer.h"
@@ -74,10 +76,11 @@ GUI::GUI(QWidget* parent, Qt::WindowFlags f)
     , _effectGravityButton(nullptr)
     , _effectWindButton(nullptr)
     , _timer(nullptr)
-    , _sourceAddedCallback([](SourceType, glm::vec3, float){}) // initialize function pointer with empty lambda expressions
-    , _effectAddedCallback([](EffectType, glm::vec3, float){}) // initialize function pointer with empty lambda expressions
-    , _updateCallback([](float){}) // initialize function pointer with empty lambda expressions
-    , _removeAllCallback([](){}) // initialize function pointer with empty lambda expressions
+    // initialize function pointers with empty lambda expressions
+    , _sourceAddedCallback([](SourceType, glm::vec3, float){}) 
+    , _effectAddedCallback([](EffectType, glm::vec3, float){})
+    , _updateCallback([](float){})
+    , _removeAllCallback([](){})
 {
     //   -----------------------------------------------------------
     //   |                                         |               |
@@ -131,7 +134,7 @@ void GUI::createRenderer() {
     QGLFormat::OpenGLVersionFlags flags = QGLFormat::openGLVersionFlags();
     const bool hasOpenGL4_0 = flags & QGLFormat::OpenGL_Version_4_0;
     if (!hasOpenGL4_0)
-        LFATAL("Graphics Driver do not support OpenGL version 4.0. Renderer will not work.");
+        LFATAL("Graphics Driver do not support OpenGL version 4.0.");
 
     // Initialize the renderer with the format that we determined above
     _renderer = new Renderer(format);
@@ -465,11 +468,3 @@ void GUI::startRendering() {
     _renderingStarted = true;
     _renderer->startRendering();
 }
-
-//void GUI::show() {
-//    QWidget::show();
-//    // Create the timer that will drive the rendering and update rate of 60Hz
-//    _timer = new QTimer(this);
-//    connect(_timer, SIGNAL(timeout()), this, SLOT(handleUpdate()));
-//    _timer->start(16); // 16ms = 60Hz refresh rate
-//}
